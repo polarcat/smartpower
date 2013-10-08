@@ -139,7 +139,7 @@ static int smartp_read(int fd, unsigned char *buf, size_t len)
 	}
 
 	if (rc < 0) {
-		err("failed to read %lu bytes\n", len);
+		err("failed to read %lu bytes\n", (unsigned long)len);
 		return rc;
 	}
 
