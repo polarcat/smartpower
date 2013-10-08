@@ -72,6 +72,7 @@ static int smartp_open(const char *dev)
 }
 
 static int csv;
+static char sep;
 static int ts_style;
 static double ts_start;
 
@@ -85,7 +86,7 @@ static void smartp_printd(const unsigned char *data)
 		gettimeofday(&tv, NULL);
 		ts_start = (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 		if (ts_style == 0)
-			printf("0.0%c%s\n", csv ? ',' : ' ', data);
+			printf("0.0%c%s\n", sep, data);
 		else
 			printf("[%5u.%06u] %s\n", 0, 0, data);
 		return;
@@ -94,7 +95,7 @@ static void smartp_printd(const unsigned char *data)
 	gettimeofday(&tv, NULL);
 	ts = (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0 - ts_start;
 	if (ts_style == 0) {
-		printf("%f%c%s\n", ts, csv ? ',' : ' ', data);
+		printf("%f%c%s\n", ts, sep, data);
 	} else {
 		ts_sec = ts;
 		ts_usec = (ts - (unsigned long long) ts) * 1000000.0;
@@ -381,10 +382,12 @@ int main(int argc, char **argv)
 		if (opt(arg, "-k", "--kernel")) {
 			ts_style = 1;
 			csv = 0;
+			sep = ' ';
 			continue;
 		}
 		if (opt(arg, "-c", "--csv")) {
 			csv = 1;
+			sep = ',';
 			ts_style = 0;
 			continue;
 		}
