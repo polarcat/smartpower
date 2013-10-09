@@ -15,6 +15,7 @@
 #include <linux/input.h>
 #include <linux/hidraw.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -24,8 +25,8 @@
 #include <errno.h>
 
 #define err(fmt, args...) { \
-	printf("err: "fmt, ##args); \
-	printf("%s:%d: %s, %d\n", __func__, __LINE__, strerror(errno), errno); \
+	printf("(E) "fmt, ##args); \
+	printf("(I) %s:%d: %s, %d\n", __func__, __LINE__, strerror(errno), errno); \
 }
 
 #define MAX_BUF		65
@@ -65,6 +66,12 @@ static int smartp_open(const char *dev)
 	fd = open(dev, O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
 		err("%s: unable to open device\n", dev);
+
+		if (errno == 13) {
+			printf("(=) become root or escalate priviledge\n");
+			exit(errno);
+		}
+
 		return -errno;
 	}
 
@@ -256,20 +263,30 @@ static int smartp_getdata(int fd)
 #define SMARTP_VENDOR	0x04d8
 #define SMARTP_PRODUCT	0x003f
 
-#define HIDRAW_MAX	99
-#define HIDRAW_PREFIX	"/dev/hidraw"
-#define HIDRAW_MAXNAME	(sizeof(HIDRAW_PREFIX) + 2)
+#define HIDRAW_CLASS	"/sys/class/hidraw"
 
 static int smartp_probe(void)
 {
-	int i;
+	int i = 0;
 	int rc;
 	int fd = -1;
 	struct hidraw_devinfo info;
-	char name[HIDRAW_MAXNAME];
+	char name[80];
+	DIR *dir;
+	struct dirent *dentry;
 
-	for (i = 0; i <= HIDRAW_MAX; i++) {
-		sprintf(name, HIDRAW_PREFIX"%d", i);
+	dir = opendir(HIDRAW_CLASS);
+	if (!dir) {
+		err(HIDRAW_CLASS": failed to open directory\n");
+		printf("(=) try to enable CONFIG_HIDRAW in kernel config\n");
+		return -errno;
+	}
+
+	while ((dentry = readdir(dir))) {
+		if (dentry->d_name[0] == '.')
+			continue;
+		i++;
+		snprintf(name, sizeof(name), "/dev/%s", dentry->d_name);
 		fd = smartp_open(name);
 		if (fd < 0)
 			continue;
@@ -281,6 +298,10 @@ static int smartp_probe(void)
 			break;
 		}
 	}
+	closedir(dir);
+
+	if (i == 0)
+		printf("(=) smart power device is not connected\n");
 
 	return fd;
 }
