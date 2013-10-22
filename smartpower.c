@@ -225,6 +225,7 @@ static int smartp_toggle_power(int fd)
 	if (rc < 0)
 		return rc;
 
+	usleep(100000); /* wait status update; time gained experimentally */
 	return smartp_read(fd, buf, sizeof(buf));
 }
 
