@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# rudimental script to plot two csv data sets
+#
+# Copyright (c) 2015, Aliaksei Katovich <aliaksei.katovich at gmail.com>
+#
+# Licensed under the GNU General Public License version 2 (GPLv2).
+
+vcolor="#FF8C00"
+vcolor="#9708D4"
+acolor="#F0E68C"
+acolor="#990000"
+#fcolor="grey70"
+#bcolor="black"
+fcolor="grey30"
+bcolor="black"
+
+_init()
+{
+#	echo "set obj 1 rectangle behind from screen 0,0 to screen 1,1"
+#	echo "set obj 1 fillstyle solid 1.0 fillcolor rgb '$bcolor'"
+
+	echo "set title 'Comparison' tc rgb '$fcolor'"
+	echo "set key left Left"
+	echo "set key tc rgb '$fcolor'"
+	echo "set xtic auto"
+	echo "set xlabel 'Bytes' tc rgb '#41303F'"
+	echo "set xtics axis mirror rangelimited"
+
+	echo "set ylabel '$name1' tc rgb '$acolor'"
+#	echo "set yrange [0:0.5]"
+	echo "set ytic auto nomirror tc lt 1"
+
+	echo "set y2label '$name2' tc rgb '$vcolor'"
+#	echo "set y2range [0:0.5]"
+	echo "set y2tic auto nomirror tc lt 2"
+
+	echo "set border 1 lt rgb '$fcolor'"
+	echo "set grid lt 0 lw 1 lc rgb '$fcolor'"
+
+#	echo "set mouse"
+#	echo "unset multiplot"
+#	echo "unset autoscale"
+
+	echo "set ytics tc rgb '$fcolor'"
+	echo "set y2tics tc rgb '$fcolor'"
+	echo "set style data lines"
+
+	echo "set datafile separator ' '"
+
+	echo "f(x) = mean_y"
+	echo "fit f(x) '$file1' u 0:1 via mean_y"
+	echo "f(x) = mean_y2"
+	echo "fit f(x) '$file2' u 0:1 via mean_y2"
+
+	echo "f(x) = mean_x"
+	echo "fit f(x) '$file1' u 0:0 via mean_x"
+	echo "f(x) = mean_x2"
+	echo "fit f(x) '$file2' u 0:0 via mean_x2"
+
+	echo -n "plot '$file1' u 2:1 "
+	echo -n "title sprintf('$name1 mean: time %.06f sec, bytes %.01f', mean_y, mean_x) "
+	echo -n "lt 1 lc rgb '$acolor' axes x1y1,"
+	echo -n "'$file2' u 2:1 "
+	echo -n "title sprintf('$name2 mean: time %.06f sec, bytes %.01f', mean_y2, mean_x2) "
+	echo "lt 2 lc rgb '$vcolor' axes x1y2"
+}
+
+file1=$1
+file2=$2
+
+if [ -z "$file2" ]; then
+	echo "Usage: $(basename $0) <data1.csv> <data2.csv>"
+	exit 1
+fi
+
+name1=$(basename $file1)
+name2=$(basename $file2)
+
+_init | gnuplot -noraise -p
