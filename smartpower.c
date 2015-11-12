@@ -25,9 +25,12 @@
 #include <errno.h>
 
 #define err(fmt, args...) { \
-	printf("(E) "fmt, ##args); \
-	printf("(I) %s:%d: %s, %d\n", __func__, __LINE__, strerror(errno), errno); \
+	fprintf(stderr, "(ee) "fmt, ##args); \
+	fprintf(stderr, "(ii) %s:%d: %s, %d\n", __func__, __LINE__, \
+		strerror(errno), errno); \
 }
+
+#define msg(fmt, args...) fprintf(stderr, "(==) "fmt, ##args)
 
 #define MAX_BUF		65
 #define MAX_SLEEP	100 /* us */
@@ -68,7 +71,7 @@ static int smartp_open(const char *dev)
 		err("%s: unable to open device\n", dev);
 
 		if (errno == 13) {
-			printf("(=) become root or escalate priviledge\n");
+			msg("become root or escalate priviledge\n");
 			exit(errno);
 		}
 
@@ -279,7 +282,7 @@ static int smartp_probe(void)
 	dir = opendir(HIDRAW_CLASS);
 	if (!dir) {
 		err(HIDRAW_CLASS": failed to open directory\n");
-		printf("(=) try to enable CONFIG_HIDRAW in kernel config\n");
+		msg("try to enable CONFIG_HIDRAW in kernel config\n");
 		return -errno;
 	}
 
@@ -295,14 +298,14 @@ static int smartp_probe(void)
 		if (rc < 0)
 			continue;
 		if (info.vendor == SMARTP_VENDOR && info.product == SMARTP_PRODUCT) {
-			fprintf(stderr, "Detected smartp at %s\n", name);
+			msg("Detected smartp at %s\n", name);
 			break;
 		}
 	}
 	closedir(dir);
 
 	if (i == 0)
-		printf("(=) smart power device is not connected\n");
+		msg("smart power device is not connected\n");
 
 	return fd;
 }
